@@ -5,6 +5,7 @@ public class SwiftTimerAppPlugin: NSObject, FlutterPlugin {
     private var timer: Timer?
     private var counter: Double? = 40
     private static var eventChannelHandler: EventChannelHandler?
+    private static var interval: Double? = 1
 
     override public init() {
         super.init()
@@ -25,15 +26,20 @@ public class SwiftTimerAppPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "start":
             let totalTime = args?["totalTime"] as? Double
-            let interval: Double? = 1
             counter = totalTime
 
-            start(totalTime: totalTime, interval: interval)
+            start(totalTime: totalTime, interval: SwiftTimerAppPlugin.interval)
             result("Started")
+            break
 
-        case "stop":
-            stop()
-            result("Stopped")
+        case "pause":
+            timer?.invalidate()
+            timer = nil
+            result("Paused")
+            break
+            
+        case "resume":
+            start(totalTime: counter, interval: SwiftTimerAppPlugin.interval)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -41,11 +47,6 @@ public class SwiftTimerAppPlugin: NSObject, FlutterPlugin {
 
     public func start(totalTime _: Double?, interval: Double?) {
         timer = Timer.scheduledTimer(timeInterval: interval ?? 1.0, target: self, selector: #selector(updateCounter), userInfo: nil, repeats: true)
-    }
-
-    public func stop() {
-        timer?.invalidate()
-        timer = nil
     }
 
     @objc func updateCounter() {

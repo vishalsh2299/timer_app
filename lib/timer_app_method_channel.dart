@@ -10,18 +10,8 @@ class MethodChannelTimerApp extends TimerAppPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('timer_app');
-
   final eventChannel = const EventChannel('timer_event_channel');
-
   StreamSubscription<dynamic>? streamSubscription;
-
-  @override
-  Future<String?> getPlatformVersion() async {
-    final version =
-        await methodChannel.invokeMethod<String>('getPlatformVersion');
-
-    return version;
-  }
 
   start(double? totalTime) async {
     await methodChannel
@@ -40,11 +30,15 @@ class MethodChannelTimerApp extends TimerAppPlatform {
 
   stopListener() {
     streamSubscription!.cancel();
-    stop();
+    pause();
   }
 
-  stop() async {
-    await methodChannel.invokeMethod<String>('stop');
+  pause() async {
+    await methodChannel.invokeMethod<String>('pause');
+  }
+
+  resume() async {
+    await methodChannel.invokeMethod<String>('resume');
   }
 }
 

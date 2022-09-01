@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:timer_app/timer_app_method_channel.dart';
 
+enum Status { pause, resume, stop }
+
 void main() {
   runApp(const MyApp());
 }
@@ -29,12 +31,15 @@ class TimerApp extends StatefulWidget {
   State<TimerApp> createState() => _TimerAppState();
 }
 
-class _TimerAppState extends State<TimerApp> {
+class _TimerAppState extends State<TimerApp>
+    with SingleTickerProviderStateMixin {
   final double _totalTime = 10.0;
   final _methodTimer = MethodChannelTimerApp();
-
   double? _value, _height = 0.0;
-  bool _isStarted = false;
+  Status _status = Status.stop;
+
+  late AnimationController _controller;
+  Animation? _sizeAnimation;
 
   @override
   void dispose() {
@@ -45,6 +50,14 @@ class _TimerAppState extends State<TimerApp> {
   @override
   void initState() {
     super.initState();
+
+    _controller = AnimationController(
+        vsync: this, duration: Duration(seconds: _totalTime.toInt()));
+
+    _controller.addListener(() {
+      setState(() {});
+    });
+
     _value = _totalTime;
 
     _methodTimer.timerListen(
@@ -54,10 +67,12 @@ class _TimerAppState extends State<TimerApp> {
             _value = double.tryParse(event.toString()) ?? 0.0;
 
             if (event == "FINISHED") {
-              _isStarted = false;
+              // _isStarted = false;
+              _status = Status.stop;
               _value = _totalTime;
 
-              _methodTimer.stop();
+              _methodTimer.pause();
+              _controller.reset();
 
               setState(() {});
             }
@@ -71,15 +86,15 @@ class _TimerAppState extends State<TimerApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEA8C8F),
+      backgroundColor: const Color.fromARGB(255, 242, 88, 88),
       body: Stack(
         children: [
-          AnimatedContainer(
+          Container(
+            height: _sizeAnimation == null
+                ? MediaQuery.of(context).size.height
+                : _sizeAnimation!.value,
+            color: const Color.fromARGB(255, 61, 77, 95),
             alignment: Alignment.center,
-            height: _height ?? MediaQuery.of(context).size.height,
-            color: const Color(0xff7393B3),
-            duration: Duration(seconds: _totalTime.toInt()),
-            curve: Curves.easeIn,
           ),
           Center(
             child: Column(
@@ -96,21 +111,54 @@ class _TimerAppState extends State<TimerApp> {
                 IconButton(
                   padding: const EdgeInsets.only(right: 55),
                   onPressed: () {
-                    if (!_isStarted) {
-                      _methodTimer.start(_totalTime);
-                      _height =
-                          _height == 0 ? MediaQuery.of(context).size.height : 0;
-                    } else {
-                      _methodTimer.stop();
-                      _value = _totalTime;
+                    switch (_status) {
+                      case Status.stop:
+                        _sizeAnimation = Tween<double>(
+                                begin: MediaQuery.of(context).size.height,
+                                end: 0.0)
+                            .animate(_controller);
+                        _controller.forward();
+
+                        _methodTimer.start(_totalTime);
+                        _height = _height == 0
+                            ? MediaQuery.of(context).size.height
+                            : 0;
+
+                        _status = Status.pause;
+                        break;
+
+                      case Status.resume:
+                        _methodTimer.resume();
+
+                        _height = MediaQuery.of(context).size.height;
+                        _controller.forward();
+
+                        _status = Status.pause;
+                        break;
+
+                      case Status.pause:
+                        _controller.stop();
+
+                        _methodTimer.pause();
+                        _status = Status.resume;
+
+                        double percTimePassed =
+                            (_totalTime - _value!) / _totalTime;
+
+                        _height =
+                            MediaQuery.of(context).size.height * percTimePassed;
+
+                        break;
+                      default:
                     }
 
-                    setState(() {
-                      _isStarted = !_isStarted;
-                    });
+                    setState(() {});
                   },
                   icon: Icon(
-                    !_isStarted ? Icons.restart_alt_outlined : Icons.pause,
+                    // !_isStarted ? Icons.restart_alt_outlined : Icons.pause,
+                    _status == Status.stop || _status == Status.resume
+                        ? Icons.play_arrow
+                        : Icons.pause,
                     color: Colors.white,
                     size: 80,
                   ),
