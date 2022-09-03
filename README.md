@@ -26,3 +26,9 @@ They are used to invoke methods with or without arguments at the platform side. 
 ### EventChannel
 
 They are used to stream data from platform to dart side. These stream requests are encoded into binary at the platform side and then we can receive these stream requests by subscribing to them. The stream data is then decoded into Dart.
+
+### Articles to understand working on Platform Channels In-Depth
+
+[In-Depth Guide to work with platform channels by integrating 3rd Party SDK: IOS](https://techblog.geekyants.com/in-depth-guide-to-work-with-platform-channels-by-integrating-3rd-party-sdk-ios)
+
+[In-Depth Guide to Work with Platform Channels by Integrating 3rd Party SDK: Android](https://techblog.geekyants.com/in-depth-guide-to-work-with-platform-channels-by-integrating-3rd-party-sdk-android)
